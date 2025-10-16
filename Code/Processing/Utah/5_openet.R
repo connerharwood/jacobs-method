@@ -1,8 +1,8 @@
 
 library(tidyverse)
+library(sf)
 library(data.table)
 library(glue)
-library(sf)
 library(terra)
 library(exactextractr)
 
@@ -11,12 +11,12 @@ library(exactextractr)
 # Load sample raster for aligning CRS
 sample_rast = rast("Data/Raw/OpenET/Utah/eeMETRIC/utah_eemetric_2024_10.tif")
 
-# Load fields panel
-fields_sf = st_read("Data/Clean/Fields/Utah/fields_panel.shp") |> 
+# Load 2024 fields
+fields_sf = st_read("Data/Clean/Fields/Utah/fields_panel.gpkg") |> 
   # Filter to just 2024 fields
   filter(year == 2024) |> 
   # Select needed variables
-  select(id, geometry) |> 
+  select(id, geometry = geom) |> 
   # Align CRS with ET raster
   st_transform(crs = crs(sample_rast))
 
@@ -25,17 +25,17 @@ fields_sf = st_read("Data/Clean/Fields/Utah/fields_panel.shp") |>
 # Initialize list to store each year's data
 all_et_list = list()
 
-for (year in 2007:2024) {
+for (year in 2016:2024) {
   # Initialize list for current year's monthly data
   year_list = list()
   
-  # Determine which months to process for current year (data is 11/2007-10/2024)
-  if (year == 2007) {
-    months = 11:12 # Nov-Dec for 2007
+  # Determine which months to process for current year (data is 11/2016-10/2024)
+  if (year == 2016) {
+    months = 11:12 # Nov-Dec for 2016
   } else if (year == 2024) {
     months = 1:10 # Jan-Oct for 2024
   } else {
-    months = 1:12 # All months for 2008-2023
+    months = 1:12 # All months for 2017-2023
   }
   
   for (month in months) {
@@ -67,10 +67,9 @@ for (year in 2007:2024) {
         et_in = mean / 25.4, # Convert ET from mm to in
         et_ft = et_in / 12, # Convert ET from in to ft
       ) |> 
-      select(id, year, month, et_in, et_ft)
-    
-    # Set as data table for faster processing
-    setDT(et_extract)
+      select(id, year, month, et_in, et_ft) |> 
+      # Set as data table for faster processing
+      setDT()
     
     # Store current month in list
     year_list[[as.character(month)]] = et_extract
@@ -114,9 +113,30 @@ openet_eemetric = all_et |>
     et_win_in, 
     et_grow_in
   ) |> 
+  # Set as data table for faster processing
   setDT()
 
 # ==== SAVE ====================================================================
 
-# Save as RData file
 save(openet_eemetric, file = "Data/Clean/Input Data/Utah/openet_eemetric.rda")
+
+
+
+# List all files with full paths
+files <- list.files("Data/Raw/PRISM", full.names = TRUE)
+
+# Extract year and month from filenames
+library(stringr)
+file_dates <- str_match(basename(files), "prism_ppt_us_30s_(\\d{4})(\\d{2})\\.tif")
+years <- as.integer(file_dates[,2])
+months <- as.integer(file_dates[,3])
+
+# Identify files before November 2016
+to_delete <- files[years < 2016 | (years == 2016 & months < 11)]
+
+# Check files before deleting
+to_delete
+
+# Delete the files
+file.remove(to_delete)
+

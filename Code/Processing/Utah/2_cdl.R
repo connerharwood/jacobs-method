@@ -1,10 +1,9 @@
 
 library(tidyverse)
+library(sf)
 library(readxl)
 library(terra)
-library(sf)
 library(exactextractr)
-library(data.table)
 
 # ==== PROCESS CDL DATA ========================================================
 
@@ -16,7 +15,7 @@ sample_rast = rast("Data/Raw/CDL/Utah/CDL_2024_49.tif")
 
 # Load temporary fields panel
 fields_panel_temp = st_read("Data/Clean/Fields/Utah/Temp/fields_panel_temp.gpkg") |> 
-  # Align CRS with CDL raster
+  # Align CRS with CDL rasters
   st_transform(crs = crs(sample_rast))
 
 # Filter to fields missing crop info
@@ -41,7 +40,7 @@ for (file in tiff_files) {
   
   # Extract mode crop for each field
   cdl_extract = exact_extract(
-    # Extract raster values for current year's field poylgons
+    # Extract raster values for current year's field polygons
     cdl_rast,
     fields_current,
     
@@ -109,5 +108,5 @@ fields_panel = fields_panel_temp |>
 
 # ==== SAVE ====================================================================
 
-st_write(fields_panel, "Data/Clean/Fields/Utah/fields_panel.shp", delete_layer = TRUE)
+#st_write(fields_panel, "Data/Clean/Fields/Utah/fields_panel.shp", delete_layer = TRUE)
 st_write(fields_panel, "Data/Clean/Fields/Utah/fields_panel.gpkg", delete_layer = TRUE)

@@ -3,6 +3,7 @@ library(tidyverse)
 library(sf)
 library(readxl)
 library(tmap)
+library(glue)
 tmap_mode("view")
 
 # ==== REPAIR WRLU GEOMETRY ====================================================
@@ -30,175 +31,70 @@ for (year in 2017:2024) {
 
 # ==== LOAD ====================================================================
 
-# Load 2024 WRLU fields
-wrlu_2024 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2024/wrlu_2024.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    id = OBJECTID,
-    county = County,
-    basin = Basin,
-    sub_area = SubArea,
-    land_use = Landuse,
-    acres_2024 = Acres,
-    crop_2024 = Descriptio,
-    cdl_2024 = Class_Name,
-    crop_group_2024 = CropGroup,
-    land_use_group_2024 = LU_Group,
-    irr_method_2024 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912) |> 
-  # Create field centroid for joining with previous years
-  mutate(centroid = st_centroid(geometry))
+# Initialize list to store each WRLU year
+wrlu_list = list()
 
-# Load 2023 WRLU fields
-wrlu_2023 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2023/wrlu_2023.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    acres_2023 = Acres,
-    crop_2023 = Descriptio,
-    cdl_2023 = Class_Name,
-    crop_group_2023 = CropGroup,
-    land_use_group_2023 = LU_Group,
-    irr_method_2023 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912)
-
-# Load 2022 WRLU fields
-wrlu_2022 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2022/wrlu_2022.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    acres_2022 = Acres,
-    crop_2022 = Descriptio,
-    cdl_2022 = Class_Name,
-    crop_group_2022 = CropGroup,
-    land_use_group_2022 = LU_Group,
-    irr_method_2022 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912)
-
-# Load 2021 WRLU fields
-wrlu_2021 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2021/wrlu_2021.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    acres_2021 = Acres,
-    crop_2021 = Descriptio,
-    cdl_2021 = Class_Name,
-    crop_group_2021 = CropGroup,
-    land_use_group_2021 = LU_Group,
-    irr_method_2021 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912)
-
-# Load 2020 WRLU fields
-wrlu_2020 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2020/wrlu_2020.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    acres_2020 = Acres,
-    crop_2020 = Descriptio,
-    cdl_2020 = Class_Name,
-    crop_group_2020 = CropGroup,
-    land_use_group_2020 = LU_Group,
-    irr_method_2020 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912)
-
-# Load 2019 WRLU fields
-wrlu_2019 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2019/wrlu_2019.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    acres_2019 = Acres,
-    crop_2019 = Descriptio,
-    cdl_2019 = Class_Name,
-    crop_group_2019 = CropGroup,
-    land_use_group_2019 = LU_Group,
-    irr_method_2019 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912)
-
-# Load 2018 WRLU fields
-wrlu_2018 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2018/wrlu_2018.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    acres_2018 = Acres,
-    crop_2018 = Descriptio,
-    cdl_2018 = Class_Name,
-    crop_group_2018 = CropGroup,
-    land_use_group_2018 = LU_Group,
-    irr_method_2018 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912)
-
-# Load 2017 WRLU fields
-wrlu_2017 = st_read("Data/Raw/Fields/Utah/Repaired WRLU/2017/wrlu_2017.shp") |> 
-  # Only include agriculture fields in Utah
-  filter(Landuse == "Agricultural", State == "Utah") |> 
-  # Select and rename needed variables
-  select(
-    acres_2017 = Acres,
-    crop_2017 = Descriptio,
-    cdl_2017 = Class_Name,
-    crop_group_2017 = CropGroup,
-    land_use_group_2017 = LU_Group,
-    irr_method_2017 = IRR_Method,
-    geometry
-  ) |> 
-  # Make geometry valid
-  st_make_valid() |> 
-  # Transform to NAD 83 for spatial operations
-  st_transform(crs = 26912)
+# Load and process each WRLU year
+for (yr in 2017:2024) {
+  # Shapefile path
+  file_path = glue("Data/Raw/Fields/Utah/Repaired WRLU/{yr}/wrlu_{yr}.shp")
+  
+  # Load and process 2024 separately
+  if (yr == 2024) {
+    # Load shapefile
+    wrlu_2024 = st_read(file_path) |> 
+      # Only include agriculture fields in Utah
+      filter(Landuse == "Agricultural", State == "Utah") |> 
+      # Select and rename needed variables
+      select(
+        id = OBJECTID,
+        county = County,
+        basin = Basin,
+        sub_area = SubArea,
+        land_use = Landuse,
+        acres_2024 = Acres,
+        crop_2024 = Descriptio,
+        cdl_2024 = Class_Name,
+        crop_group_2024 = CropGroup,
+        land_use_group_2024 = LU_Group,
+        irr_method_2024 = IRR_Method,
+        geometry
+      ) |> 
+      # Make geometry valid
+      st_make_valid() |> 
+      # Transform to NAD 83 for spatial operations
+      st_transform(crs = 26912) |> 
+      # Create field centroid for joining with previous years
+      mutate(centroid = st_centroid(geometry))
+  } else {
+    # Load shapefile
+    wrlu = st_read(file_path) |> 
+      # Only include agriculture fields in Utah
+      filter(Landuse == "Agricultural", State == "Utah") |> 
+      # Select and rename needed variables
+      select(
+        !!glue("acres_{yr}") := Acres,
+        !!glue("crop_{yr}") := Descriptio,
+        !!glue("cdl_{yr}") := Class_Name,
+        !!glue("crop_group_{yr}") := CropGroup,
+        !!glue("land_use_group_{yr}") := LU_Group,
+        !!glue("irr_method_{yr}") := IRR_Method,
+        geometry
+      ) |> 
+      # Make geometry valid
+      st_make_valid() |> 
+      # Transform to NAD 83 for spatial operations
+      st_transform(crs = 26912)
+    
+    # Store in list with name by year
+    wrlu_list[[as.character(yr)]] = wrlu
+  }
+}
 
 # Load crop rooting zone depths for WRLU crops
 rooting_depth = read_excel("Data/Misc/rooting_depth.xlsx")
 
 # ==== BUILD PANEL =============================================================
-
-# Add each pre-2024 WRLU dataset to list
-wrlu_list = list(wrlu_2017, wrlu_2018, wrlu_2019, wrlu_2020, wrlu_2021, wrlu_2022, wrlu_2023)
-
-# Name each dataset in list by year
-names(wrlu_list) = 2017:2023
 
 # Define 2024 fields as base polygons
 wrlu_base = wrlu_2024
@@ -259,7 +155,7 @@ crop_count = wrlu_panel |>
   count() |> 
   pivot_wider(names_from = year, values_from = n)
 
-# For each WRLU crop that doens't match a CDL crop, look at most common CDL crop
+# For each WRLU crop that doesn't match a CDL crop, look at most common CDL crop
 beans = wrlu_panel |> filter(crop == "Beans") |> group_by(cdl) |> count()
 berries = wrlu_panel |> filter(crop == "Berries") |> group_by(cdl) |> count()
 dry = wrlu_panel |> filter(crop == "Dry Land/Other") |> group_by(cdl) |> count()
@@ -283,7 +179,7 @@ veg = wrlu_panel |> filter(crop == "Vegetables") |> group_by(cdl) |> count()
 # ==== FINALIZE PANEL ==========================================================
 
 # Finalize 2017-2024 fields panel
-fields_2017_2024 = wrlu_panel |> 
+fields_panel_temp = wrlu_panel |> 
   # Align crop names across years and with CDL labels
   mutate(crop = case_when(
     crop %in% c("Dry Land/Other", "Fallow", "Idle", "Fallow/Idle") ~ "Fallow/Idle Cropland",
@@ -315,27 +211,12 @@ fields_2017_2024 = wrlu_panel |>
     irr_method,
     geometry
   ) |> 
+  # Order each field by descending year
+  arrange(id, desc(year)) |> 
   # Transform to WGS 84
   st_transform(crs = 4326)
 
-# Create panel of fields from 2008-2016 using 2024 fields
-fields_2008_2016 = expand_grid(
-  id = unique(wrlu_2024$id),
-  year = c(2008:2016)
-) |> 
-  left_join(
-    wrlu_2024 |> select(id, county, basin, sub_area, land_use, acres = acres_2024),
-    by = "id"
-  ) |> 
-  st_as_sf() |> 
-  st_make_valid() |> 
-  st_transform(crs = 4326)
-
-# Combine 2008-2016 fields with 2017-2024 fields
-fields_panel_temp = bind_rows(fields_2017_2024, fields_2008_2016)
-
 # ==== SAVE ====================================================================
 
-# Save as temporary fields panel (final panel will have CDL data for missing crop)
-st_write(fields_panel_temp, "Data/Clean/Fields/Utah/Temp/fields_panel_temp.shp", delete_layer = TRUE)
+# Save as temporary fields panel (final panel will have CDL data for missing crops)
 st_write(fields_panel_temp, "Data/Clean/Fields/Utah/Temp/fields_panel_temp.gpkg", delete_layer = TRUE)

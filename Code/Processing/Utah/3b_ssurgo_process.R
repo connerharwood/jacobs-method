@@ -6,7 +6,7 @@ library(data.table)
 # ==== LOAD ====================================================================
 
 # Load fields panel
-fields = st_read("Data/Clean/Fields/Utah/fields_panel.shp") |> 
+fields = st_read("Data/Clean/Fields/Utah/fields_panel.gpkg") |> 
   # Filter to 2024 fields
   filter(year == 2024) |> 
   # Transform to NAD83 for spatial operations
@@ -17,8 +17,8 @@ mu_polys = st_read("Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "mu_polys") |>
   # Transform to NAD83 for spatial operations
   st_transform(crs = 26912)
 
-# Load component percents
-co_pct = st_read("Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "co_pct")
+# Load component data
+comp = st_read("Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "comp")
 
 # Load component restrictions
 co_restrictions = st_read("Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "co_restrictions")
@@ -34,7 +34,7 @@ ssurgo_aoi = st_intersection(mu_polys, fields)
 # Calculate component-weighted mean depth to restrictive layer for each map unit in inches
 mu_restrictions = co_restrictions |> 
   # Join component keys with map unit keys and component percents
-  left_join(co_pct, by = "cokey") |>
+  left_join(comp, by = "cokey") |>
   # Calculate component-weighted mean depth to restrictive layer for each map unit in inches
   group_by(mukey) |> 
   summarize(
@@ -80,8 +80,11 @@ ssurgo = ssurgo_stats |>
     # Convert NaN values to NA
     across(c(awc_in_in, swsf, max_rz_in), ~na_if(., NaN))
   ) |> 
+  # Join each field with its SSURGO data
   right_join(fields, by = "id") |> 
+  # Select needed variables
   select(id, awc_in_in, swsf, max_rz_in) |> 
+  # Set as data table for faster processing
   setDT()
 
 # ==== SAVE ====================================================================

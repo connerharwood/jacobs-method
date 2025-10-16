@@ -1,58 +1,41 @@
 
 library(tidyverse)
+library(sf)
 library(data.table)
 library(glue)
-library(sf)
 library(terra)
-library(rnaturalearth)
 library(exactextractr)
 
 # ==== LOAD ====================================================================
 
-# Sample raster for aligning CRS
+# Load sample raster for aligning CRS
 sample_rast = rast("Data/Raw/PRISM/prism_ppt_us_30s_202410.tif")
 
-# Utah state boundary
-state_sf = ne_states(country = "United States of America", returnclass = "sf") |> 
-  # Filter to Utah
-  filter(name == "Utah") |> 
-  # Select needed variables
-  select(name, geometry) |> 
-  # Align CRS with ET raster
-  st_transform(crs = crs(sample_rast)) |> 
-  # Add buffer around boundary to include all raster tiles
-  st_buffer(dist = 1000, max_cells = 100000) |> 
-  # Simplify geometry for faster processing
-  st_simplify()
-
-# Utah WRLU ag fields
-fields_sf = st_read("Data/Clean/Fields/Utah/fields_panel.shp") |> 
+# Load 2024 fields
+fields_sf = st_read("Data/Clean/Fields/Utah/fields_panel.gpkg") |> 
   # Filter to just 2024 fields
   filter(year == 2024) |> 
   # Select needed variables
-  select(id, geometry) |> 
+  select(id, geometry = geom) |> 
   # Align CRS with PRISM raster
   st_transform(crs = crs(sample_rast))
 
 # ==== EXTRACT MONTHLY PRECIP ==================================================
 
-# Vectorize Utah state boundary
-state_vect = vect(state_sf)
-
 # Initialize list to store each year's data
 all_prcp_list = list()
 
-for (year in 2007:2024) {
-  # Initalize list for current year's monthly data
+for (year in 2016:2024) {
+  # Initialize list for current year's monthly data
   year_list = list()
   
-  # Determine which months to process for current year (data is 11/2007-10/2024)
-  if (year == 2007) {
-    months = 11:12 # Nov-Dec for 2007
+  # Determine which months to process for current year (data is 11/2016-10/2024)
+  if (year == 2016) {
+    months = 11:12 # Nov-Dec for 2016
   } else if (year == 2024) {
     months = 1:10 # Jan-Oct for 2024
   } else {
-    months = 1:12 # All months for 2008-2023
+    months = 1:12 # All months for 2017-2023
   }
   
   for (month in months) {
@@ -64,14 +47,10 @@ for (year in 2007:2024) {
     # Load PRISM raster for current year
     prism_rast = rast(glue("Data/Raw/PRISM/prism_ppt_us_30s_{yearmonth}.tif"))
     
-    # Crop and mask to Utah state boundary
-    prism_crop = crop(prism_rast, state_vect)
-    prism_utah = crop(prism_crop, state_vect)
-    
     # Extract each field's monthly precip
     prcp_extract = exact_extract(
-      # Extract raster values for current month's field poylgons
-      prism_utah, 
+      # Extract raster values for current month's field polygons
+      prism_rast, 
       fields_sf, 
       
       # Calculate area-weighted mean precip across each field's pixels
@@ -80,8 +59,8 @@ for (year in 2007:2024) {
       # Return output as a dataframe
       force_df = TRUE,
       
-      # Max number of raster cells to load (Utah has just less than this amount)
-      max_cells_in_memory = 350000000
+      # Max number of raster cells to load
+      max_cells_in_memory = 1000000000
     ) |> 
       # Merge in field ID
       bind_cols(id = fields_sf$id) |> 
@@ -90,10 +69,9 @@ for (year in 2007:2024) {
         month = month, # Create month column
         prcp_in = mean / 25.4 # Convert precip from mm to in
       ) |> 
-      select(id, year, month, prcp_in)
-    
-    # Set as data table for faster processing
-    setDT(prcp_extract)
+      select(id, year, month, prcp_in) |> 
+      # Set as data table for faster processing
+      setDT()
     
     # Store current month in list
     year_list[[as.character(month)]] = prcp_extract
@@ -124,5 +102,4 @@ prism = all_prcp |>
 
 # ==== SAVE ====================================================================
 
-# Save as RData file
 save(prism, file = "Data/Clean/Input Data/Utah/prism.rda")

@@ -30,10 +30,10 @@ mu_polys = mu_polys_files |>
 # Save appended SSURGO polygons as layer in .gpkg file
 st_write(mu_polys, "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "mu_polys", delete_layer = TRUE)
 
-# ==== APPEND MAP UNIT COMPONENT PERCENTS ======================================
+# ==== APPEND COMPONENT DATA ===================================================
 
-# All map unit component percents files
-co_pct_files = list.files(
+# All map unit component files
+comp_files = list.files(
   path = "Data/Raw/SSURGO/Utah",
   pattern = "^comp\\.txt$",
   recursive = TRUE,
@@ -41,7 +41,7 @@ co_pct_files = list.files(
 )
 
 # Files with no data
-co_pct_missing = co_pct_files[map_lgl(co_pct_files, ~ {
+comp_missing = comp_files[map_lgl(comp_files, ~ {
   df = read_delim(
     .x,
     delim = "|",
@@ -54,10 +54,10 @@ co_pct_missing = co_pct_files[map_lgl(co_pct_files, ~ {
 })]
 
 # Files to append
-co_pct_files = setdiff(co_pct_files, co_pct_missing)
+comp_files = setdiff(comp_files, comp_missing)
 
-# Read and append map unit component percents data
-co_pct = co_pct_files |>
+# Read and append map unit component data
+comp = comp_files |>
   map(~ read_delim(
     .x,
     delim = "|",
@@ -68,8 +68,6 @@ co_pct = co_pct_files |>
     transmute(
       mukey = as.character(X108),
       cokey = as.character(X109),
-      hydro_condition = as.character(X22),
-      hydro_group = as.character(X80),
       co_pct = X2 / 100
     ) |> 
     # Not all components add up to 100, so manually calculate weights
@@ -82,7 +80,7 @@ co_pct = co_pct_files |>
   bind_rows()
 
 # Save appended map unit component percents as layer in .gpkg file
-st_write(co_pct, "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "co_pct", delete_layer = TRUE)
+st_write(comp, "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "comp", delete_layer = TRUE)
 
 # ==== APPEND COMPONENT RESTRICTIONS DATA ======================================
 
