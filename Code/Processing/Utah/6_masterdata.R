@@ -5,7 +5,7 @@ library(data.table)
 
 # ==== LOAD ====================================================================
 
-# Load 2008-2024 Utah fields panel
+# Load 2017-2024 Utah fields panel
 fields_panel = st_read("Data/Clean/Fields/Utah/fields_panel.shp") |> 
   st_drop_geometry()
 
@@ -90,8 +90,7 @@ depletion_data1 = merge4 |>
     prcp_in,
     prcp_win_in,
     et_in,
-    et_win_in,
-    et_grow_in
+    et_win_in
   ) |> 
   setDT()
 
