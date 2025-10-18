@@ -1,7 +1,6 @@
 
 library(tidyverse)
 library(sf)
-library(data.table)
 
 # ==== LOAD ====================================================================
 
@@ -83,9 +82,7 @@ ssurgo = ssurgo_stats |>
   # Join each field with its SSURGO data
   right_join(fields, by = "id") |> 
   # Select needed variables
-  select(id, awc_in_in, swsf, max_rz_in) |> 
-  # Set as data table for faster processing
-  setDT()
+  select(id, awc_in_in, swsf, max_rz_in)
 
 # ==== SAVE ====================================================================
 

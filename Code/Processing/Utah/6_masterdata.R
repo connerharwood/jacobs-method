@@ -1,7 +1,6 @@
 
 library(tidyverse)
 library(sf)
-library(data.table)
 
 # ==== LOAD ====================================================================
 
@@ -55,61 +54,6 @@ merge = expand_grid(
     openet_eemetric,
     by = c("id", "year", "month"),
     relationship = "one-to-one"
-  ) |> 
-  # Set as data table for faster processing
-  setDT()
-
-
-
-
-
-
-# Create crosswalk of all fields, years, and months
-full_panel = expand_grid(
-  id = unique(fields_panel$id),
-  year = 2016:2024,
-  month = 1:12
-) |> 
-  mutate(water_year = if_else(month >= 11, year + 1, year)) |> 
-  filter(water_year %in% 2017:2024) |> 
-  setDT()
-
-# Merge crosswalk with yearly fields
-merge1 = full_panel |> 
-  left_join(
-    fields_panel |> select(id, year, rz_in),
-    by = c("id", "water_year" = "year"),
-    relationship = "many-to-one"
-  )
-
-# Join first merge with time-invariant SSURGO soil data
-merge2 = merge1 |> 
-  left_join(
-    ssurgo,
-    by = "id",
-    relationship = "many-to-one"
-  ) |> 
-  # Ensure that rooting depth doesn't exceed water table or bedrock
-  mutate(rz_in = case_when(
-    is.na(rz_in) ~ rz_in, # Keep NA as is
-    !is.na(rz_in) & rz_in > max_rz_in ~ max_rz_in, # Set rz to restrictive layer if it exceeds it
-    TRUE ~ rz_in # Keep all other cases as is
-  ))
-
-# Join second merge with monthly PRISM precipitation data
-merge3 = merge2 |> 
-  left_join(
-    prism,
-    by = c("id", "year", "month"),
-    relationship = "one-to-one"
-  )
-
-# Join third merge with monthly OpenET data
-merge4 = merge3 |> 
-  left_join(
-    openet_eemetric,
-    by = c("id", "year", "month"),
-    relationship = "one-to-one"
   )
 
 # ==== DEPLETION INPUTS ========================================================
@@ -119,7 +63,7 @@ depletion_data1 = merge |>
   mutate(peff_in = pmax(0, swsf * (0.70917 * prcp_in ^ 0.82416 - 0.11556) * 10 ^ (0.02426 * et_in))) |> 
   group_by(id, water_year) |> 
   # Calculate winter carryover soil moisture
-  mutate(sm_co_in = pmax(0, pmin(0.67 * (prcp_win_in - 1.25 * et_win_in), 0.75 * rz_in * awc_in_in))) |> 
+  mutate(smco_in = pmax(0, pmin(0.67 * (prcp_win_in - 1.25 * et_win_in), 0.75 * rz_in * awc_in_in))) |> 
   ungroup()
 
 depletion_data2 = depletion_data1 |> 
@@ -140,9 +84,8 @@ masterdata = depletion_data1 |>
     acres,
     et_in,
     peff_in,
-    sm_co_in
-  ) |> 
-  setDT()
+    smco_in
+  )
 
 # ==== SAVE ====================================================================
 

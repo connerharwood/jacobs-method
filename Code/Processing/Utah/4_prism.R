@@ -69,9 +69,7 @@ for (year in 2016:2024) {
         month = month, # Create month column
         prcp_in = mean / 25.4 # Convert precip from mm to in
       ) |> 
-      select(id, year, month, prcp_in) |> 
-      # Set as data table for faster processing
-      setDT()
+      select(id, year, month, prcp_in)
     
     # Store current month in list
     year_list[[as.character(month)]] = prcp_extract
@@ -97,8 +95,7 @@ prcp_winter = all_prcp |>
 # Rejoin winter precip with monthly precip panel
 prism = all_prcp |> 
   left_join(prcp_winter, by = c("id", "water_year")) |> 
-  select(id, water_year, year, month, prcp_in, prcp_win_in) |> 
-  setDT()
+  select(id, water_year, year, month, prcp_in, prcp_win_in)
 
 # ==== SAVE ====================================================================
 
