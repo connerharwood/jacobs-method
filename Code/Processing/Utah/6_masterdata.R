@@ -6,7 +6,7 @@ library(data.table)
 # ==== LOAD ====================================================================
 
 # Load 2017-2024 Utah fields panel
-fields_panel = st_read("Data/Clean/Fields/Utah/fields_panel.shp") |> 
+fields_panel = st_read("Data/Clean/Fields/Utah/fields_panel.gpkg") |> 
   st_drop_geometry()
 
 load("Data/Clean/Input Data/Utah/ssurgo.rda") # Soil data
@@ -18,11 +18,11 @@ load("Data/Clean/Input Data/Utah/openet_eemetric.rda") # Monthly ET data
 # Create crosswalk of all fields, years, and months
 full_panel = expand_grid(
   id = unique(fields_panel$id),
-  year = 2007:2024,
+  year = 2016:2024,
   month = 1:12
 ) |> 
   mutate(water_year = if_else(month >= 11, year + 1, year)) |> 
-  filter(water_year %in% 2008:2024) |> 
+  filter(water_year %in% 2017:2024) |> 
   setDT()
 
 # Merge crosswalk with yearly fields
@@ -64,7 +64,7 @@ merge4 = merge3 |>
   )
 
 # Free up memory
-rm(ssurgo, prism, full_panel, merge1, merge2, merge3)
+rm(ssurgo, prism, openet_eemetric, full_panel, merge1, merge2, merge3)
 gc()
 
 # ==== DEPLETION INPUTS ========================================================
@@ -77,13 +77,13 @@ depletion_data1 = merge4 |>
     month,
     county,
     basin,
-    sub_area = sub_are,
-    land_use = land_us,
+    sub_area,
+    land_use,
     acres,
-    irr_method = irr_mth,
+    irr_method,
     crop,
-    crop_group = crp_grp,
-    land_use_group = lnd_s_g,
+    crop_group,
+    land_use_group,
     rz_in,
     awc_in_in,
     swsf,

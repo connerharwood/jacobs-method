@@ -2,9 +2,7 @@
 library(tidyverse)
 library(sf)
 library(readxl)
-library(tmap)
 library(glue)
-tmap_mode("view")
 
 # ==== REPAIR WRLU GEOMETRY ====================================================
 

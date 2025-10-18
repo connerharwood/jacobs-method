@@ -1,10 +1,10 @@
 
 library(tidyverse)
 library(sf)
-library(data.table)
-library(glue)
 library(terra)
 library(exactextractr)
+library(data.table)
+library(glue)
 
 # ==== LOAD ====================================================================
 
