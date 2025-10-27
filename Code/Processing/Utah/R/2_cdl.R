@@ -164,11 +164,9 @@ fields_panel = fields_panel_temp |>
     rz_in,
     irr_method,
     geometry = geom
-  ) |>
-  # Transform to WGS 84
-  st_transform(crs = 4326)
+  ) |> 
+  st_transform(crs = 26912)
 
 # ==== SAVE ====================================================================
 
-#st_write(fields_panel, "Data/Clean/Fields/Utah/fields_panel.shp", delete_layer = TRUE)
 st_write(fields_panel, "Data/Clean/Fields/Utah/fields_panel.gpkg", delete_layer = TRUE)

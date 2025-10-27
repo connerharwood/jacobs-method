@@ -2,11 +2,14 @@
 library(tidyverse)
 library(sf)
 
+ssurgo_folder = "Data/Raw/SSURGO/Utah"
+ssurgo_output = "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg"
+
 # ==== APPEND MAP UNIT POLYGONS ================================================
 
 # All map unit polygons shapefiles
 mu_polys_files = list.files(
-  path = "Data/Raw/SSURGO/Utah",
+  path = ssurgo_folder,
   pattern = "^soilmu_a_.*\\.shp$",
   recursive = TRUE,
   full.names = TRUE
@@ -18,6 +21,7 @@ mu_polys = mu_polys_files |>
     .x, quiet = TRUE
   ) |>
     st_make_valid() |>
+    st_transform(crs = 26912) |> 
     select(
       mukey = MUKEY,
       survey_area = AREASYMBOL,
@@ -28,13 +32,13 @@ mu_polys = mu_polys_files |>
   bind_rows()
 
 # Save appended SSURGO polygons as layer in .gpkg file
-st_write(mu_polys, "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "mu_polys", delete_layer = TRUE)
+st_write(mu_polys, ssurgo_output, layer = "mu_polys", delete_layer = TRUE)
 
 # ==== APPEND COMPONENT DATA ===================================================
 
 # All map unit component files
 comp_files = list.files(
-  path = "Data/Raw/SSURGO/Utah",
+  path = ssurgo_folder,
   pattern = "^comp\\.txt$",
   recursive = TRUE,
   full.names = TRUE
@@ -80,13 +84,13 @@ comp = comp_files |>
   bind_rows()
 
 # Save appended map unit component percents as layer in .gpkg file
-st_write(comp, "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "comp", delete_layer = TRUE)
+st_write(comp, ssurgo_output, layer = "comp", delete_layer = TRUE)
 
 # ==== APPEND COMPONENT RESTRICTIONS DATA ======================================
 
 # All component restrictions files
 co_restrictions_files = list.files(
-  path = "Data/Raw/SSURGO/Utah",
+  path = ssurgo_folder,
   pattern = "^crstrcts\\.txt$",
   recursive = TRUE,
   full.names = TRUE
@@ -125,13 +129,13 @@ co_restrictions = co_restrictions_files |>
   bind_rows()
 
 # Save appended component restrictions data as layer in .gpkg file
-st_write(co_restrictions, "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "co_restrictions", delete_layer = TRUE)
+st_write(co_restrictions, ssurgo_output, layer = "co_restrictions", delete_layer = TRUE)
 
 # ==== APPEND MAP UNIT AGGATT DATA =============================================
 
 # All map unit aggregated attribute files
 mu_aggatt_files = list.files(
-  path = "Data/Raw/SSURGO/Utah",
+  path = ssurgo_folder,
   pattern = "^muaggatt\\.txt$",
   recursive = TRUE,
   full.names = TRUE
@@ -171,4 +175,4 @@ mu_aggatt = mu_aggatt_files |>
   bind_rows()
 
 # Save appended map unit aggatt data as layer in .gpkg file
-st_write(mu_aggatt, "Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "mu_aggatt", delete_layer = TRUE)
+st_write(mu_aggatt, ssurgo_output, layer = "mu_aggatt", delete_layer = TRUE)

@@ -7,14 +7,10 @@ library(sf)
 # Load fields panel
 fields = st_read("Data/Clean/Fields/Utah/fields_panel.gpkg") |> 
   # Filter to 2024 fields
-  filter(year == 2024) |> 
-  # Transform to NAD83 for spatial operations
-  st_transform(crs = 26912)
+  filter(year == 2024)
 
 # Load map unit polygons
-mu_polys = st_read("Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "mu_polys") |> 
-  # Transform to NAD83 for spatial operations
-  st_transform(crs = 26912)
+mu_polys = st_read("Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "mu_polys")
 
 # Load component data
 comp = st_read("Data/Raw/SSURGO/Utah/ssurgo_ut.gpkg", layer = "comp")

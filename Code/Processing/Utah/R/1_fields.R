@@ -61,9 +61,7 @@ for (yr in 2017:2024) {
       # Make geometry valid
       st_make_valid() |> 
       # Transform to NAD 83 for spatial operations
-      st_transform(crs = 26912) |> 
-      # Create field centroid for joining with previous years
-      mutate(centroid = st_centroid(geometry))
+      st_transform(crs = 26912)
   } else {
     # Load shapefile
     wrlu = st_read(file_path) |> 
@@ -99,11 +97,11 @@ for (yr in names(wrlu_list)) {
   # Get current year's WRLU sf object
   wrlu_current = wrlu_list[[yr]]
   
-  # Join current year's fields with 2024's field centroids
+  # Join current year's fields with 2024 fields
   wrlu_base = st_join(
     wrlu_base,
     wrlu_current,
-    join = st_intersects # Find fields that intersect with 2024 centroids
+    join = st_intersects # Find fields that intersect with 2024 fields
   )
   
   # Create dynamic columns for current year
@@ -129,17 +127,17 @@ for (yr in names(wrlu_list)) {
       !!land_use_group_col := if_else(acres_diff > 0.01, NA, .data[[land_use_group_col]]),
       !!irr_method_col := if_else(acres_diff > 0.01, NA, .data[[irr_method_col]])
     )
-  
-  # Pivot to long format
-  wrlu_panel = wrlu_base |> 
-    pivot_longer(
-      cols = matches("^(crop(_group)?|cdl|land_use_group|irr_method)_"),
-      names_to = c(".value", "year"),
-      names_pattern = "(.*)_(\\d{4})"
-    ) |> 
-    # Convert year to integer and crop to title case
-    mutate(year = as.integer(year), crop = str_to_title(crop))
 }
+
+# Pivot to long format
+wrlu_panel = wrlu_base |> 
+  pivot_longer(
+    cols = matches("^(crop(_group)?|cdl|land_use_group|irr_method)_"),
+    names_to = c(".value", "year"),
+    names_pattern = "(.*)_(\\d{4})"
+  ) |> 
+  # Convert year to integer and crop to title case
+  mutate(year = as.integer(year), crop = str_to_title(crop))
 
 # ==== HARMONIZE WRLU CROPS ACROSS YEARS =======================================
 
@@ -225,9 +223,7 @@ fields_panel_temp = wrlu_harmonized |>
     geometry
   ) |> 
   # Order each field by descending year
-  arrange(id, desc(year)) |> 
-  # Transform to WGS 84
-  st_transform(crs = 4326)
+  arrange(id, desc(year))
 
 # ==== SAVE ====================================================================
 
